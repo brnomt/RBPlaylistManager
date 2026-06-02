@@ -75,6 +75,20 @@ def ensure_demo_library() -> Path:
     return root
 
 
+def collect_audio_files(folder: Path) -> list[Path]:
+    """All audio files under *folder* (recursive), sorted."""
+    if not folder.is_dir():
+        return []
+    found: list[Path] = []
+    try:
+        for path in folder.rglob("*"):
+            if path.is_file() and path.suffix.lower() in AUDIO_EXTENSIONS:
+                found.append(path)
+    except OSError:
+        return []
+    return sorted(found, key=lambda p: str(p).lower())
+
+
 def resolve_music_root(file_or_dir: Path, mount_music_root: Path) -> Path:
     """Best ``Music`` root for Rockbox path conversion."""
     music = mount_music_root

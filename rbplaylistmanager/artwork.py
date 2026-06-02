@@ -1,4 +1,4 @@
-"""Folder cover art: Kitty TGP, half-cell, or emoji fallback."""
+"""Folder cover art using half-cell rendering (works in Kitty and most terminals)."""
 
 from __future__ import annotations
 
@@ -16,21 +16,42 @@ SKIP_COVER_NAMES = frozenset(
     }
 )
 
-_image_support: bool | None = None
+_pillow_ok: bool | None = None
+_textual_image_ok: bool | None = None
+
+# Preview panel size in terminal cells.
+COVER_COLS = 20
+COVER_ROWS = 11
 
 
 def probe_image_support() -> bool:
-    """True if textual-image + Pillow are available."""
-    global _image_support
-    if _image_support is None:
+    """True if we can render cover thumbnails."""
+    return _has_pillow() and _has_textual_image()
+
+
+def _has_pillow() -> bool:
+    global _pillow_ok
+    if _pillow_ok is None:
         try:
-            import textual_image.widget  # noqa: F401
             from PIL import Image  # noqa: F401
 
-            _image_support = True
+            _pillow_ok = True
         except ImportError:
-            _image_support = False
-    return _image_support
+            _pillow_ok = False
+    return _pillow_ok
+
+
+def _has_textual_image() -> bool:
+    global _textual_image_ok
+    if _textual_image_ok is None:
+        try:
+            import textual_image.widget  # noqa: F401
+            from textual_image.widget import HalfcellImage  # noqa: F401
+
+            _textual_image_ok = True
+        except ImportError:
+            _textual_image_ok = False
+    return _textual_image_ok
 
 
 def is_kitty_terminal() -> bool:
@@ -43,11 +64,9 @@ def uses_graphic_covers() -> bool:
 
 
 def cover_widget_class():
-    """Best Textual image widget for this terminal."""
-    from textual_image.widget import HalfcellImage, TGPImage
+    """Half-cell images are reliable inside Textual layouts."""
+    from textual_image.widget import HalfcellImage
 
-    if is_kitty_terminal():
-        return TGPImage
     return HalfcellImage
 
 
@@ -105,3 +124,22 @@ def find_folder_cover(folder: Path) -> Path | None:
     if not images:
         return None
     return min(images, key=_cover_sort_key)
+
+
+def load_cover_thumbnail(path: Path):
+    """PIL image sized for the preview panel (half-cell pixels)."""
+    from PIL import Image as PILImage
+    from textual_image._terminal import get_cell_size
+
+    cell = get_cell_size()
+    max_w = max(COVER_COLS * cell.width, 40)
+    max_h = max(COVER_ROWS * cell.height, 40)
+    img = PILImage.open(path)
+    if img.mode not in ("RGB", "RGBA"):
+        img = img.convert("RGBA")
+    img.thumbnail((max_w, max_h), PILImage.Resampling.LANCZOS)
+    if img.mode == "RGBA":
+        background = PILImage.new("RGB", img.size, (30, 30, 46))
+        background.paste(img, mask=img.split()[3])
+        img = background
+    return img

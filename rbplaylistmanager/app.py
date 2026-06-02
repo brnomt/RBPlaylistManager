@@ -15,6 +15,7 @@ from textual.widgets.tree import TreeNode
 from rbplaylistmanager.artwork import folder_tree_icon, track_tree_icon
 from rbplaylistmanager.library import (
     NodeData,
+    collect_audio_files,
     ensure_demo_library,
     list_directory,
 )
@@ -368,6 +369,41 @@ class RBPlaylistApp(App):
             return None
         return data.path
 
+    def _cursor_directory_path(self) -> Path | None:
+        tree = self.query_one("#library-tree", Tree)
+        node = tree.cursor_node
+        if node is None or node.data is None or not node.data.is_dir:
+            return None
+        if node is tree.root:
+            return None
+        return node.data.path
+
+    def _add_folder_to_playlist(self, folder: Path) -> tuple[int, int]:
+        """Add all audio under *folder*. Returns (added, skipped_duplicates)."""
+        self._sync_mount_context_for_path(folder)
+        tracks = collect_audio_files(folder)
+        added = 0
+        skipped = 0
+        pl_list = self.query_one("#playlist-list", ListView)
+        for track in tracks:
+            entry = self._rockbox_entry(track)
+            if entry in self._entries:
+                skipped += 1
+                continue
+            self._entries.append(entry)
+            pl_list.append(ListItem(Label(rockbox_path_to_display(entry))))
+            added += 1
+        if added:
+            pl_list.index = len(self._entries) - 1
+            self._persist_playlist()
+            self._refresh_titles()
+        return added, skipped
+
+    def _sync_mount_context_for_path(self, path: Path) -> None:
+        tree = self.query_one("#library-tree", Tree)
+        node = tree.cursor_node
+        self._sync_mount_context(node)
+
     def action_cycle_playlist(self) -> None:
         if len(self._playlists) < 2:
             self._set_status("Solo hay una playlist en esta carpeta.")
@@ -393,7 +429,7 @@ class RBPlaylistApp(App):
         if event.key == "right" and lib_tree.has_focus:
             file_path = self._cursor_file_path()
             if file_path is None:
-                self._set_status("Enter/Espacio abre carpeta · → añade pista")
+                self._set_status("Enter/Espacio abre · → pista · ← carpeta entera")
                 event.prevent_default()
                 event.stop()
                 return
@@ -433,6 +469,20 @@ class RBPlaylistApp(App):
             return
 
         if event.key == "left" and lib_tree.has_focus:
+            folder = self._cursor_directory_path()
+            if folder is not None:
+                added, skipped = self._add_folder_to_playlist(folder)
+                if added == 0 and skipped == 0:
+                    self._set_status("No hay pistas en esta carpeta.")
+                elif skipped:
+                    self._set_status(
+                        f"Añadidas {added} pistas ({skipped} ya estaban en la playlist)"
+                    )
+                else:
+                    self._set_status(f"Añadidas {added} pistas → {self.active_playlist.name}")
+                event.prevent_default()
+                event.stop()
+                return
             pl_list.focus()
             event.prevent_default()
             event.stop()

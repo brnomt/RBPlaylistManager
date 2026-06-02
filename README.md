@@ -21,6 +21,7 @@ Al pulsar **Enter** en un montaje, las playlists del panel derecho usan la carpe
 | `↑` / `↓` | Navegar montajes, carpetas o playlist |
 | `Enter` / `Espacio` (carpeta) | Abrir / cerrar carpeta (carga subcarpetas la primera vez) |
 | `→` (pista) | Añadir a la playlist activa |
+| `←` (carpeta) | Añadir **todas** las pistas de esa carpeta (recursivo) |
 | `←` (playlist) | Quitar pista |
 | `←` (biblioteca) | Ir al panel playlist |
 | `→` (playlist) | Volver a biblioteca |
