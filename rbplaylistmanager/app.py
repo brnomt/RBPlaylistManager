@@ -12,6 +12,7 @@ from textual.message import Message
 from textual.widgets import Footer, Header, Label, ListItem, ListView, Static, Tree
 from textual.widgets.tree import TreeNode
 
+from rbplaylistmanager.artwork import folder_tree_icon, track_tree_icon
 from rbplaylistmanager.library import (
     NodeData,
     ensure_demo_library,
@@ -21,6 +22,7 @@ from rbplaylistmanager.library import (
 from rbplaylistmanager.mounts import MountInfo, discover_mounts, mount_for_path
 from rbplaylistmanager.paths import host_path_to_rockbox, rockbox_path_to_display
 from rbplaylistmanager.playlist import load_playlist, save_playlist
+from rbplaylistmanager.widgets import CoverPreview
 
 
 class TrackAdded(Message):
@@ -45,7 +47,11 @@ class LibraryPane(Vertical):
         padding: 0 1;
         text-style: bold;
     }
-    LibraryPane Tree {
+    #library-body {
+        height: 1fr;
+    }
+    #library-body Tree {
+        width: 1fr;
         height: 1fr;
         background: transparent;
         scrollbar-background: transparent;
@@ -156,7 +162,9 @@ class RBPlaylistApp(App):
         with Horizontal(id="main-row"):
             with LibraryPane():
                 yield Static("Biblioteca", classes="title", id="lib-title")
-                yield Tree("Montajes", id="library-tree")
+                with Horizontal(id="library-body"):
+                    yield Tree("Montajes", id="library-tree")
+                    yield CoverPreview(id="cover-preview")
             with PlaylistPane():
                 yield Static("Playlist", classes="title", id="pl-title")
                 yield ListView(id="playlist-list")
@@ -169,7 +177,9 @@ class RBPlaylistApp(App):
         self._discover_playlists()
         self._reload_playlist()
         self._refresh_titles()
-        self.query_one("#library-tree", Tree).focus()
+        tree = self.query_one("#library-tree", Tree)
+        tree.auto_expand = False
+        tree.focus()
 
     def action_refresh_mounts(self) -> None:
         self._refresh_mount_list()
@@ -200,7 +210,9 @@ class RBPlaylistApp(App):
             node.allow_expand = True
 
         if tree.root.children:
-            tree.select_node(tree.root.children[0])
+            first = tree.root.children[0]
+            tree.select_node(first)
+            self._update_cover_preview(first)
 
     def _sync_mount_context(self, node: TreeNode | None) -> None:
         if node is None or node.data is None:
@@ -234,10 +246,16 @@ class RBPlaylistApp(App):
 
         subdirs, files = list_directory(data.path)
         for subdir in subdirs:
-            child = node.add(f"📁 {subdir.name}", data=NodeData(path=subdir, is_dir=True))
+            child = node.add(
+                f"{folder_tree_icon()}{subdir.name}",
+                data=NodeData(path=subdir, is_dir=True),
+            )
             child.allow_expand = True
         for track in files:
-            child = node.add(f"♪ {track.name}", data=NodeData(path=track, is_dir=False))
+            child = node.add(
+                f"{track_tree_icon()}{track.name}",
+                data=NodeData(path=track, is_dir=False),
+            )
             child.allow_expand = False
 
         data.populated = True
@@ -245,9 +263,21 @@ class RBPlaylistApp(App):
 
     @on(Tree.NodeHighlighted)
     def on_tree_node_highlighted(self, event: Tree.NodeHighlighted) -> None:
-        """Solo actualiza la barra de estado; no expande carpetas."""
+        """Actualiza estado y miniatura; no expande carpetas."""
         event.stop()
+        self._update_cover_preview(event.node)
         self._refresh_titles()
+
+    def _update_cover_preview(self, node: TreeNode | None) -> None:
+        preview = self.query_one("#cover-preview", CoverPreview)
+        if node is None or node.data is None:
+            preview.show_folder(None)
+            return
+        data = node.data
+        if data.is_dir:
+            preview.show_folder(data.path)
+        else:
+            preview.show_folder(data.path.parent)
 
     @on(Tree.NodeSelected)
     def on_tree_node_selected(self, event: Tree.NodeSelected) -> None:

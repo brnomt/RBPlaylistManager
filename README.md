@@ -29,6 +29,8 @@ Al pulsar **Enter** en un montaje, las playlists del panel derecho usan la carpe
 | `R` | Refrescar montajes detectados |
 | `Q` | Salir |
 
+Con **Kitty** + `textual-image` + **Pillow**, aparece una miniatura de la carpeta (primera `jpg`/`png`/`ico` dentro) a la derecha del árbol. En otros terminales se usa el emoji 📁.
+
 ## Instalación
 
 ```bash
