@@ -8,6 +8,7 @@ from textual.containers import Vertical
 from textual.widgets import Static
 
 from rbplaylistmanager.artwork import (
+    cover_widget_class,
     fallback_cover_glyph,
     find_folder_cover,
     uses_graphic_covers,
@@ -15,15 +16,18 @@ from rbplaylistmanager.artwork import (
 
 
 class CoverPreview(Vertical):
-    """Tiny folder cover: textual-image on Kitty, emoji otherwise."""
+    """Folder cover thumbnail (Kitty TGP or half-cell blocks)."""
 
     DEFAULT_CSS = """
     CoverPreview {
         dock: right;
-        width: 14;
-        height: 7;
+        width: 18;
+        min-width: 18;
+        height: 10;
+        min-height: 10;
         margin: 0 0 0 1;
-        background: transparent;
+        background: $surface 30%;
+        border: round $primary 25%;
     }
     CoverPreview Static#cover-emoji {
         width: 100%;
@@ -33,17 +37,16 @@ class CoverPreview(Vertical):
         color: $text-muted;
     }
     CoverPreview Image {
-        width: 100%;
-        height: 100%;
+        width: 18;
+        height: 10;
     }
     """
 
     def compose(self):
         yield Static(fallback_cover_glyph(), id="cover-emoji")
         if uses_graphic_covers():
-            from textual_image.widget import Image
-
-            yield Image("", id="cover-img")
+            widget_cls = cover_widget_class()
+            yield widget_cls(id="cover-img")
 
     def show_folder(self, folder: Path | None) -> None:
         emoji = self.query_one("#cover-emoji", Static)
@@ -54,11 +57,14 @@ class CoverPreview(Vertical):
             image.image = str(cover)
             image.display = "block"
             emoji.display = "none"
+            image.refresh(layout=True)
             return
 
         if uses_graphic_covers():
             try:
-                self.query_one("#cover-img").display = "none"
+                img = self.query_one("#cover-img")
+                img.display = "none"
+                img.refresh(layout=True)
             except Exception:
                 pass
 

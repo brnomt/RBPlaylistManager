@@ -17,7 +17,6 @@ from rbplaylistmanager.library import (
     NodeData,
     ensure_demo_library,
     list_directory,
-    resolve_music_root,
 )
 from rbplaylistmanager.mounts import MountInfo, discover_mounts, mount_for_path
 from rbplaylistmanager.paths import host_path_to_rockbox, rockbox_path_to_display
@@ -294,7 +293,7 @@ class RBPlaylistApp(App):
 
         data = node.data
         if not data.is_dir:
-            self._set_status("→ en una pista para añadirla a la playlist")
+            self._set_status("→ en una pista para añadir a la playlist")
             return
 
         self._sync_mount_context(node)
@@ -351,8 +350,10 @@ class RBPlaylistApp(App):
         self.query_one("#status-bar", Static).update(message)
 
     def _rockbox_entry(self, file_path: Path) -> str:
-        root = resolve_music_root(file_path, self._music_root)
-        return host_path_to_rockbox(file_path.resolve(), root)
+        device_root = (
+            self._active_mount.path if self._active_mount else self._music_root
+        )
+        return host_path_to_rockbox(file_path.resolve(), device_root)
 
     def _persist_playlist(self) -> None:
         save_playlist(self.active_playlist, self._entries)
@@ -383,10 +384,16 @@ class RBPlaylistApp(App):
         lib_tree = self.query_one("#library-tree", Tree)
         pl_list = self.query_one("#playlist-list", ListView)
 
+        if event.key == "space" and lib_tree.has_focus:
+            self.action_library_enter()
+            event.prevent_default()
+            event.stop()
+            return
+
         if event.key == "right" and lib_tree.has_focus:
             file_path = self._cursor_file_path()
             if file_path is None:
-                self._set_status("Enter abre carpeta · → añade pista")
+                self._set_status("Enter/Espacio abre carpeta · → añade pista")
                 event.prevent_default()
                 event.stop()
                 return

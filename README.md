@@ -19,7 +19,7 @@ Al pulsar **Enter** en un montaje, las playlists del panel derecho usan la carpe
 | Tecla | Acción |
 |-------|--------|
 | `↑` / `↓` | Navegar montajes, carpetas o playlist |
-| `Enter` (carpeta) | Abrir / cerrar carpeta (carga subcarpetas la primera vez) |
+| `Enter` / `Espacio` (carpeta) | Abrir / cerrar carpeta (carga subcarpetas la primera vez) |
 | `→` (pista) | Añadir a la playlist activa |
 | `←` (playlist) | Quitar pista |
 | `←` (biblioteca) | Ir al panel playlist |
@@ -29,7 +29,9 @@ Al pulsar **Enter** en un montaje, las playlists del panel derecho usan la carpe
 | `R` | Refrescar montajes detectados |
 | `Q` | Salir |
 
-Con **Kitty** + `textual-image` + **Pillow**, aparece una miniatura de la carpeta (primera `jpg`/`png`/`ico` dentro) a la derecha del árbol. En otros terminales se usa el emoji 📁.
+Las rutas en `.m3u8` se guardan como en Rockbox: `/<HDD0>/HQ MUSIC/Artista/pista.flac` (UTF-8 con BOM).
+
+Con **Kitty** + `textual-image` + **Pillow**, miniatura de la carpeta a la derecha (`Cover.jpg`, etc.). En otros terminales, bloques de color o emoji 📁.
 
 ## Instalación
 
