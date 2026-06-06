@@ -4,7 +4,7 @@ Gestor de playlists **.m3u8** para iPod con **Rockbox**, con interfaz de termina
 
 - Tema **Catppuccin Mocha** y fondos **transparentes** (deja ver el fondo del terminal).
 - **Montajes automáticos**: escanea `/run/media`, `/media` y `/mnt` (vfat, exfat, ntfs, etc.). Sin argumentos en la línea de comandos.
-- Si no hay ningún dispositivo conectado, usa `demo_library/` de ejemplo.
+- Si no hay ningún dispositivo conectado, te lo dice: conéctalo y pulsa `R`.
 
 ## Paneles
 
@@ -26,9 +26,21 @@ Al pulsar **Enter** en un montaje, las playlists del panel derecho usan la carpe
 | `←` (biblioteca) | Ir al panel playlist |
 | `→` (playlist) | Volver a biblioteca |
 | `Tab` | Cambiar foco |
-| `P` | Cambiar playlist `.m3u8` |
+| `P` | **Selector de playlists** (elegir / crear / borrar) |
 | `R` | Refrescar montajes detectados |
 | `Q` | Salir |
+
+### Selector de playlists (`P`)
+
+Abre un modal con todas las `.m3u8` del volumen activo:
+
+| Tecla | Acción |
+|-------|--------|
+| `↑` / `↓` | Recorrer playlists |
+| `Enter` | Activar la resaltada |
+| `N` | Saltar al campo "Nueva" para crearla |
+| `Supr` / `Ctrl+D` | Borrar la resaltada |
+| `Esc` | Cancelar |
 
 Las rutas en `.m3u8` se guardan como en Rockbox: `/<HDD0>/HQ MUSIC/Artista/pista.flac` (UTF-8 con BOM).
 
@@ -57,11 +69,13 @@ Para que se vea el fondo del terminal, usa un emulador con transparencia (Kitty,
 
 ```
 RBPlaylistManager/
-├── rbplaylistmanager/
-│   ├── app.py
-│   ├── mounts.py       # detección de volúmenes
-│   ├── library.py
-│   ├── playlist.py
-│   └── paths.py
-└── demo_library/
+└── rbplaylistmanager/
+    ├── app.py          # UI + bindings
+    ├── mounts.py       # detección de volúmenes
+    ├── library.py      # árbol de música
+    ├── playlist.py     # lectura / escritura .m3u8
+    ├── paths.py        # conversión host ↔ Rockbox
+    ├── screens.py      # modales (selector de playlist)
+    ├── widgets.py      # CoverPreview
+    └── artwork.py      # detección de carátulas
 ```
